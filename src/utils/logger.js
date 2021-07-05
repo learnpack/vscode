@@ -1,12 +1,22 @@
 
-module.exports = () => {
+const log = () => {
 
-    const log = (text) => console.log("LOG: ", text);
-    const debug = (text) => console.log("DEBUG: ", text);
-    const warn = (text) => console.log("WARN: ", text);
-    const logError = (text) => console.log("ERROR: ", text);
+    const log = function(){
+        console.log("LOG: ", ...arguments)
+    };
+    const debug = function(){
+        console.log("DEBUG: ", ...arguments)
+    };
+    const warn = function(){
+        console.log("WARN: ", ...arguments)
+    };
+    const logError = function(){
+        console.log("ERROR: ", ...arguments)
+    };
 
 
     return { log, debug, warn, error: logError }
 
 }
+
+module.exports = log()
