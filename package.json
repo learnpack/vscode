@@ -1,6 +1,6 @@
 {
-	"name": "learnpack-vsplugin",
-	"displayName": "learnpack-vsplugin",
+	"name": "learnpack-vscode",
+	"displayName": "learnpack-vscode",
 	"description": "Learn and upgrade your coding skills one package at a time",
 	"version": "0.0.1",
 	"engines": {
@@ -10,14 +10,20 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:learnpack-vsplugin.start"
+		"onCommand:learnpack-vscode.startTerminal",
+		"onCommand:learnpack-vscode.openCurrentExercise",
+		"onCommand:learnpack-vscode.showInstructions"
 	],
 	"main": "./src/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "learnpack-vsplugin.start",
-				"title": "Start LearnPack Compiler"
+				"command": "learnpack-vscode.showInstructions",
+				"title": "Learnpack: Start"
+			},
+			{
+				"command": "learnpack-vscode.openCurrentExercise",
+				"title": "Learnpack: Open Current Exercise"
 			}
 		]
 	},
@@ -38,6 +44,9 @@
 		"vscode-test": "^1.5.0"
 	},
 	"dependencies": {
-		"shelljs": "^0.8.4"
+		"chokidar": "^3.5.2",
+		"shelljs": "^0.8.4",
+		"socket.io": "^4.1.2",
+		"socket.io-client": "^4.1.2"
 	}
 }
