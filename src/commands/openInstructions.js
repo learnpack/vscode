@@ -35,7 +35,7 @@ module.exports = async () => {
         vscode.ViewColumn.Two, // Editor column to show the new webview panel in.
         {
             enableScripts: true,
-            preserveFocus: false,
+            preserveFocus: true,
             // localResourceRoots: [vscode.Uri.file(APP_ROOT)]
         } // Webview options. More on these later.
     );
