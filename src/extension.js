@@ -1,9 +1,10 @@
 const vscode = require('vscode');
 const path = require("path");
 const fs = require("fs");
-const logger = require('./utils/logger')
+const logger = require('./utils/console')
 const { getWorkspacePath } = require("./utils")
 const lp = require("./learnpack")
+const history = require("./utils/history")
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -12,6 +13,7 @@ function activate(context) {
 	const workspacePath = getWorkspacePath().wf;
 	logger.debug("Activating learnpack extension on "+workspacePath)
 	
+	// TODO: load name and title from the package.json
 	global.extension = {
 		name: 'learnpack-vscode',
 		title: 'LearnPack',
@@ -19,6 +21,9 @@ function activate(context) {
 	}
 
 	logger.debug("Loading extension with config: ", extension);
+
+	// start collecting text document history
+	history.start()
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
@@ -29,10 +34,22 @@ function activate(context) {
 		vscode.commands.executeCommand(`${extension.name}.openCurrentExercise`)
     })
 	
-	// load learnpack configuration
-	lp.init(workspacePath)
+
+	lp.on(lp.events.RUNNING, async (data) => {
+		logger.debug("Showing instructions")
+		panel = await vscode.commands.executeCommand(`${extension.name}.openInstructions`)
+		vscode.window.showInformationMessage(`Learnpack is now running`)
+	})
+
+	lp.on(lp.events.OPEN_WINDOW, async (url) => {
+		await vscode.env.openExternal(url)
+	})
+
+	lp.init(workspacePath).then(async (config) => {
+		await vscode.commands.executeCommand(`${extension.name}.openTerminal`)
+	})
 	
-	logger.debug(`Congratulations, your extension "${extension.name}" is now active!`);
+	logger.debug(`Congratulations, your extension "${extension.name}" is now active and waiting for learnpack to start!`);
 }
 
 // this method is called when your extension is deactivated

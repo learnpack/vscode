@@ -1,4 +1,4 @@
-const logger = require("../utils/logger")
+const logger = require("../utils/console")
 const Socket = require("../utils/socket")
 
 module.exports = ({ learnpack }) => {

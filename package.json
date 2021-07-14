@@ -10,20 +10,30 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:learnpack-vscode.startTerminal",
-		"onCommand:learnpack-vscode.openCurrentExercise",
-		"onCommand:learnpack-vscode.showInstructions"
+		"onStartupFinished"
 	],
 	"main": "./src/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "learnpack-vscode.showInstructions",
-				"title": "Learnpack: Start"
+				"command": "learnpack-vscode.openInstructions",
+				"title": "Learnpack: Open Instructions"
 			},
 			{
 				"command": "learnpack-vscode.openCurrentExercise",
 				"title": "Learnpack: Open Current Exercise"
+			},
+			{
+				"command": "learnpack-vscode.openWelcome",
+				"title": "Learnpack: Open Welcome"
+			},
+			{
+				"command": "learnpack-vscode.openTutorial",
+				"title": "Learnpack: Open Video Tutorial"
+			},
+			{
+				"command": "learnpack-vscode.openTerminal",
+				"title": "Learnpack: Open Terminal"
 			}
 		]
 	},
@@ -45,8 +55,10 @@
 	},
 	"dependencies": {
 		"chokidar": "^3.5.2",
+		"front-matter": "^4.0.2",
 		"shelljs": "^0.8.4",
 		"socket.io": "^4.1.2",
-		"socket.io-client": "^4.1.2"
+		"socket.io-client": "^4.1.2",
+		"xxhashjs": "^0.2.2"
 	}
 }
