@@ -1,15 +1,12 @@
 const vscode = require('vscode');
 const lp = require('../learnpack');
 const logger = require('../utils/console')
-const history = require('../utils/history')
 
 
 module.exports = async () => {
     logger.debug("open current")
     
     let current = lp.currentExercise()
-    
-    // history.closeAllOpened()
     
     logger.debug(`Opening ${current.slug}`, current)
     return openFiles(current)

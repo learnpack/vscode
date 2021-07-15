@@ -9,7 +9,8 @@ let events = {
     INIT: "initializing",
     RUNNING: "configuration_loaded",
     END: "connection_ended",
-    OPEN_TUTORIAL: "open_tutorial",
+    RESET_EXERCISE: "reset_exercise",
+    OPEN_FILES: "open_files",
     OPEN_WINDOW: "open_window",
     INSTRUCTIONS_CLOSED: "instructions_closed"
 }

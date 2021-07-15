@@ -4,7 +4,6 @@ const fs = require("fs");
 const logger = require('./utils/console')
 const { getWorkspacePath } = require("./utils")
 const lp = require("./learnpack")
-const history = require("./utils/history")
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -22,33 +21,39 @@ function activate(context) {
 
 	logger.debug("Loading extension with config: ", extension);
 
-	// start collecting text document history
-	history.start()
-
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	loadCommands(context);
 
+	/**
+	 * Start listening to all learnpack events coming from the learnpack-cli
+	 */
+
+	// when a new exercise is loaded on the front-end
 	lp.on(lp.events.START_EXERCISE, (data) => {
         logger.debug("Start a new exercise", data)
 		vscode.commands.executeCommand(`${extension.name}.openCurrentExercise`)
     })
-	
 
+	// when the CLI finished running the server and socket
 	lp.on(lp.events.RUNNING, async (data) => {
 		logger.debug("Showing instructions")
 		panel = await vscode.commands.executeCommand(`${extension.name}.openInstructions`)
 		vscode.window.showInformationMessage(`Learnpack is now running`)
 	})
 
-	lp.on(lp.events.OPEN_WINDOW, async (url) => {
-		await vscode.env.openExternal(url)
+	// whenever we want to open a new window
+	lp.on(lp.events.OPEN_WINDOW, async (data={}) => {
+		const url = (typeof(data) === "string") ? data : data.url
+		const schemaUrl = vscode.Uri.parse(url)
+		vscode.env.openExternal(schemaUrl).catch(error => vscode.window.showErrorMessage(`Error opening window with: ${url}`))
 	})
 
+	// load learnpack, required to start listening to the events above.
 	lp.init(workspacePath).then(async (config) => {
 		await vscode.commands.executeCommand(`${extension.name}.openTerminal`)
 	})
-	
+
 	logger.debug(`Congratulations, your extension "${extension.name}" is now active and waiting for learnpack to start!`);
 }
 

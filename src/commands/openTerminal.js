@@ -23,7 +23,7 @@ module.exports = () => {
     terminal.show(true); // true = don't take focus when opening
     if(!lp.config().currentExercise){
         logger.debug(`Running learnpack from the terminal`)
-        terminal.sendText(`../../bin/run start`);
+        terminal.sendText(`learnpack start`);
     }
     else logger.debug(`Learnpack is already running, no need to start from the terminal`)
 
