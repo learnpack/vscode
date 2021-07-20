@@ -1,5 +1,6 @@
 node_modules
 .vscode-test/
 *.vsix
+.env*
 
 !bin/*.vsix

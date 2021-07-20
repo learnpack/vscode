@@ -49,6 +49,9 @@ const _emit = (name, data=null) => {
  */
 const init = async () => {
     
+    if(!fs.existsSync(`${extension.workspaceRoot}/.learn`) && !fs.existsSync(`${extension.workspaceRoot}/learn.json`)){
+        throw Error("No LearnPack package was found on this workspace, make sure you have a learn.json file or at least a ./learn folder on your root")
+    }
     /**
      *  Very early (before learnpack server starts, make have sure the editor.agent is vscode
      * that way when the server starts it doesn't open a separate window

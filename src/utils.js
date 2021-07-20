@@ -7,7 +7,6 @@ const getWorkspacePath = () => {
         return { wf, f };
     }
     else {
-        vscode.window.showErrorMessage(`Working folder not found, open a folder an try again`);
         return null
     }
 }
