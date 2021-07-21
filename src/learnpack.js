@@ -78,7 +78,7 @@ const init = async () => {
 
     // start pulling from the queue (only if we haven't already)
     if(!listener){
-        listener = queue.listener({ path: `${extension.workspaceRoot}/${configFile.config.dirPath}/vscode_queue.json` })
+        listener = queue.listener({ path: `${extension.workspaceRoot}/${configFile.config.dirPath || ".learn"}/vscode_queue.json` })
         listener.onPull((e) => _emit(e.name, e.data))
         listener.onReset((e) => _emit(e.name, e.data))
     }

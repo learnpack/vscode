@@ -73,6 +73,9 @@ const now = () => {
     return hrTime[0] * 1000000 + hrTime[1] / 1000
 }
 const loadFile = (filePath) => {
+    
+    if(!fs.existsSync(filePath)) throw Error(`No queue.json file to load on ${filePath}`);
+
     const content = fs.readFileSync(filePath, 'utf8')
     const newHash = XXH.h32( content, 0xABCD ).toString(16);
     const isUpdated = lastHash != newHash
@@ -122,8 +125,10 @@ const pull = (callback) => {
 const reset = (callback) => {
     logger.debug("Queue reseted")
     actions = []
-    const success = fs.writeFileSync(options.path, "[]") 
-    if(success) callback()
+    if(fs.existsSync(options.path)){
+        const success = fs.writeFileSync(options.path, "[]") 
+        if(success) callback()
+    }
 }
 
 const onPull = (callback) => {
@@ -131,7 +136,11 @@ const onPull = (callback) => {
     const chokidar = require('chokidar')
 
     logger.debug("Starting to listen...")
-    loadFile(options.path)
+    try{
+        loadFile(options.path)
+    }catch{
+        logger.debug("No previeues queue file, waiting for it to be created...")
+    }
 
     if(!watcher){
         logger.debug(`Watching ${options.path}`)
