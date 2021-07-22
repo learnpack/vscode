@@ -22,6 +22,12 @@ module.exports = async () => {
 
     // And set its HTML content
     welcomePanel.webview.html = await getWebviewContent();
+
+    welcomePanel.onDidDispose(() => {
+        welcomePanel = null
+        welcomePanel.dispose()
+        welcomePanel.dispose()
+    })
 }
 
 async function getWebviewContent() {

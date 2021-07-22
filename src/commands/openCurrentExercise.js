@@ -19,7 +19,7 @@ const openFiles = async (ex) => {
     let editor = null
     for(let i = 0; i < files.length; i++){
         const file = vscode.Uri.file(`${extension.workspaceRoot}/${files[i].path}`);
-        editor = await vscode.window.showTextDocument(file, vscode.ViewColumn.One)
+        editor = await vscode.window.showTextDocument(file, vscode.ViewColumn.One, false)
     }
     return editor;
 }

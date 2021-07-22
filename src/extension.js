@@ -2,7 +2,7 @@ const vscode = require('vscode');
 const path = require("path");
 const fs = require("fs");
 const logger = require('./utils/console')
-const { getWorkspacePath } = require("./utils")
+const { getWorkspacePath, isPortFree } = require("./utils")
 const lp = require("./learnpack")
 
 /**
@@ -16,7 +16,7 @@ function activate(context) {
 	} 
 	const workspacePath = getWorkspacePath().wf;
 	logger.debug("Activating learnpack extension on "+workspacePath)
-	
+
 	// TODO: load name and title from the package.json
 	global.extension = {
 		name: 'learnpack-vscode',
@@ -43,8 +43,8 @@ function activate(context) {
 	// when the CLI finished running the server and socket
 	lp.on(lp.events.RUNNING, async (data) => {
 		logger.debug("Showing instructions")
-		panel = await vscode.commands.executeCommand(`${extension.name}.openInstructions`)
-		vscode.window.showInformationMessage(`Learnpack is now running`)
+		await vscode.commands.executeCommand(`${extension.name}.openInstructions`)
+		vscode.window.showInformationMessage(`LearnPack is now running`)
 	})
 
 	// whenever we want to open a new window
@@ -56,14 +56,17 @@ function activate(context) {
 
 	// load learnpack, required to start listening to the events above.
 	lp.init(workspacePath)
-		.then(async (config) => {
-			await vscode.commands.executeCommand(`${extension.name}.openTerminal`)
+		.then(async ({ config }) => {
+			const free = await isPortFree(config.port)
+			logger.debug(`Port ${config.port} is free=${free}`)
+			if(free) await vscode.commands.executeCommand(`${extension.name}.openTerminal`)
+			else await vscode.commands.executeCommand(`${extension.name}.openInstructions`)
 		})
 		.catch(error => {
 			vscode.window.showErrorMessage(error.message || error.msg || error)
 		})
 
-	logger.debug(`Congratulations, your extension "${extension.name}" is now active and waiting for learnpack to start!`);
+	logger.debug(`Congratulations, your extension "${extension.name}" is now active and waiting for LearnPack to start!`);
 }
 
 // this method is called when your extension is deactivated

@@ -30,30 +30,32 @@ const _history = () => {
             else logger.warn("History alreay started")
 
             // vscode.workspace.onDidOpenTextDocument((e) => {
-            //     logger.debug("Visible editors", vscode.window.visibleTextEditors)
-            //     logger.debug(`File opened: ${e.fileName}`, e)
+            // //     logger.debug("Visible editors", vscode.window.visibleTextEditors)
+            // //     logger.debug(`File opened: ${e.fileName}`, e)
                 
-            //     if(isIgnored(e.fileName)) return;
+            // //     if(isIgnored(e.fileName)) return;
                 
-            //     // concat instead of push to create new space on RAM memory and the previous history will remain intact.
-            //     history.push(e.fileName)
+            // //     // concat instead of push to create new space on RAM memory and the previous history will remain intact.
+            // //     history.push(e.fileName)
         
-            //     let position = openedFiles.indexOf(f => f === e.fileName)
-            //     openedFiles.splice(position,1)
+            //     openedFiles.push(position,1)
             // })
             
             // vscode.workspace.onDidCloseTextDocument((e) => {
-            //     logger.debug(`File closed: ${e.fileName}`)
+            // //     logger.debug(`File closed: ${e.fileName}`)
                 
-            //     if(isIgnored(path)) return;
+            // //     if(isIgnored(path)) return;
                 
             //     let position = openedFiles.indexOf(f => f === e.fileName)
             //     openedFiles.splice(position,1)
         
-            //     if(openedFiles.length == 0) vscode.commands.executeCommand(`${extension.name}.openWelcome`)
+            // //     if(openedFiles.length == 0) vscode.commands.executeCommand(`${extension.name}.openWelcome`)
             // })
         },
-        noOpenedFies: async () => (vscode.window.visibleTextEditors == 0),
+        noOpenedFies: async () => {
+            logger.debug(`Visible editors`, vscode.window.visibleTextEditors.length == 0)
+            return (vscode.window.visibleTextEditors.length == 0)
+        },
         closeAllOpened: async () => {
             // const opened = vscode.window.visibleTextEditors
             // logger.debug(`There are ${opened.length} opened files`, opened)

@@ -1,8 +1,10 @@
 .vscode/**
+.env*
 .vscode-test/**
 test/**
 .gitignore
 .yarnrc
+*.vsix
 vsc-extension-quickstart.md
 **/jsconfig.json
 **/*.map

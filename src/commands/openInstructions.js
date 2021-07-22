@@ -6,8 +6,11 @@ const history = require('../utils/history')
 let instructionsPanel = null
 let instructionsEvent = null
 
+let forcedToActiveEditor = null
+let activeEditorEvent = null
+
 const reveal = () => {
-    logger.debug(`Instructions currently on view ${instructionsPanel.viewColumn}`)
+    logger.debug(`Revealing instructions from column ${instructionsPanel.viewColumn} to 2`)
 
     // if(instructionsPanel.visible && instructionsPanel.viewColumn != vscode.ViewColumn.Two){
     //     logger.debug(`Moving instructions to the side`)
@@ -16,7 +19,7 @@ const reveal = () => {
     
     if(!instructionsPanel.visible){
         logger.debug(`Revealing instructions`)
-        instructionsPanel.reveal(vscode.ViewColumn.Two)
+        instructionsPanel.reveal(vscode.ViewColumn.Two, true)//preserve=true (avoid taking focus)
     } 
 
     return instructionsPanel
@@ -35,7 +38,7 @@ module.exports = async () => {
         vscode.ViewColumn.Two, // Editor column to show the new webview panel in.
         {
             enableScripts: true,
-            preserveFocus: true,
+            preserveFocus: true,//preserve=true (avoid taking focus)
             retainContextWhenHidden: true,
             // localResourceRoots: [
             //     vscode.Uri.joinPath(extensionUri, 'media')
@@ -48,13 +51,32 @@ module.exports = async () => {
 
     lp.setInstructionsPanel(instructionsPanel)
 
-    instructionsEvent = instructionsPanel.onDidChangeViewState(e => reveal())
+    //instructionsEvent = instructionsPanel.onDidChangeViewState(e => reveal())
+
+    activeEditorEvent = vscode.window.onDidChangeActiveTextEditor(async visibleEditor => {
+        
+        // logger.debug(`Instructions are opened on column ${instructionsPanel.viewColumn}`)
+        // if(instructionsPanel.viewColumn === vscode.ViewColumn.One) reveal()
+
+        // this will avoid moving the same editor twice
+        if((forcedToActiveEditor === visibleEditor) || !visibleEditor) return;
+        
+        logger.debug(`New active editor in column ${visibleEditor.viewColumn} != ${vscode.ViewColumn.One}`)
+        if(visibleEditor.viewColumn != vscode.ViewColumn.One){
+            logger.debug("Moving to the side")
+            const doc = visibleEditor.document
+            await vscode.commands.executeCommand("workbench.action.closeActiveEditor")
+            forcedToActiveEditor = await vscode.window.showTextDocument(doc,vscode.ViewColumn.One,false)
+        }
+
+    })
 
     // console.log("visible editors", vscode.window.visibleTextEditors())
 
     instructionsPanel.onDidDispose(() => {
         instructionsPanel = null
         instructionsEvent.dispose()
+        activeEditorEvent.dispose()
     })
 
     // make sure instructions are visible and on the side
@@ -64,20 +86,16 @@ module.exports = async () => {
 
 }
 
-const getPublicAddress = (address, port) => {
-    return address.indexOf("gitpod") > -1 ? `https://${port}-${address.substring(8)}` : `${address}:${port}`
-}
-
 async function getWebviewContent() {
 
     const { config } = lp.config()
     const appRoot = `${config.dirPath}/_app/`
 
-	logger.log("Loading app from ",appRoot)
     const nonce = new Date().getTime() + '' + new Date().getMilliseconds()
-    const learnpackURL = await vscode.env.asExternalUri(
-        vscode.Uri.parse(getPublicAddress(config.address, config.port))
-    );
+    const url = config.publicUrl + ((config.publicUrl.indexOf(":"+config.port) === -1) ? ":"+config.port : "")
+    
+	logger.log(`Loading app from ${appRoot} running on ${url}`)
+    const learnpackURL = await vscode.env.asExternalUri(vscode.Uri.parse(url));
 
     const encodedConfig = "";
     // const encodedConfig = Buffer.from(JSON.stringify(learnpack)).toString('base64');
@@ -99,36 +117,4 @@ async function getWebviewContent() {
 		</body>
 	</html>`
 
-}
-
-const getHtml = (url) => {
-
-    const nonce = new Date().getTime() + '' + new Date().getMilliseconds()
-    // const mainJs = this.extensionResourceUrl('media', 'index.js')
-
-    return /* html */ `<!DOCTYPE html>
-        <html>
-        <head>
-            <meta http-equiv="Content-type" content="text/htmlcharset=UTF-8">
-
-            <meta http-equiv="Content-Security-Policy" content="
-                default-src 'none'
-                font-src ${this._webviewPanel.webview.cspSource}
-                style-src ${this._webviewPanel.webview.cspSource}
-                script-src 'nonce-${nonce}'
-                frame-src *
-                ">
-
-            <link rel="stylesheet" type="text/css" href="${mainCss}">
-            <link rel="stylesheet" type="text/css" href="${codiconsUri}">
-        </head>
-        <body>
-            <div class="content">
-                <div class="iframe-focused-alert">${localize('view.iframe-focused', "Focus Lock")}</div>
-                <iframe src="${url}" sandbox="allow-scripts allow-forms allow-same-origin"></iframe>
-            </div>
-
-            <script src="${mainJs}" nonce="${nonce}"></script>
-        </body>
-        </html>`
 }

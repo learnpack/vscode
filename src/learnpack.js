@@ -25,6 +25,7 @@ const callbacks = {
             const config = vscode.workspace.getConfiguration()
             config.update('files.autoSave', "afterDelay")
             config.update('files.autoSaveDelay', 700)
+            config.update('editor.minimap.enabled', false)
         }
 
     },

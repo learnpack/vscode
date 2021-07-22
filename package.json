@@ -1,7 +1,8 @@
 {
     "name": "learnpack-vscode",
     "displayName": "learnpack-vscode",
-    "description": "Learn and upgrade your coding skills one package at a time",
+    "icon": "icon.png",
+    "description": "Seamlessly build or take interactive & auto-graded tutorials, start learning now or build a tutorial.",
     "publisher": "learnpack",
     "repository": {
         "type": "git",
@@ -42,7 +43,17 @@
                 "command": "learnpack-vscode.openTerminal",
                 "title": "Learnpack: Open Terminal"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "Terminal",
+            "properties": {
+                "learnpack.terminalEntryCommand": {
+                    "type": ["string", "null"],
+                    "default": "learnpack start",
+                    "description": "Specifies the command that will be running the command line tool (the learnpack-cli)"
+                }
+            }
+        }
     },
     "scripts": {
         "lint": "eslint .",
