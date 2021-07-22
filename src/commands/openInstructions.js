@@ -92,7 +92,7 @@ async function getWebviewContent() {
     const appRoot = `${config.dirPath}/_app/`
 
     const nonce = new Date().getTime() + '' + new Date().getMilliseconds()
-    const url = config.publicUrl + ((config.publicUrl.indexOf(":"+config.port) === -1) ? ":"+config.port : "")
+    const url = config.publicUrl// + ((config.publicUrl.indexOf(":"+config.port) === -1) ? ":"+config.port : "")
     
 	logger.log(`Loading app from ${appRoot} running on ${url}`)
     const learnpackURL = await vscode.env.asExternalUri(vscode.Uri.parse(url));
