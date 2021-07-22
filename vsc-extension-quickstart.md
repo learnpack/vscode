@@ -33,6 +33,11 @@
 * Make changes to `src/test/suite/extension.test.js` or create new test files inside the `test/suite` folder.
   * The provided test runner will only consider files matching the name pattern `**.test.ts`.
   * You can create folders inside the `test` folder to structure your tests any way you want.
+
+## Publish
+
+- Publish to Open VSX: `$ ovsx publish --pat <token>`
+
 ## Go further
 
  * [Publish your extension](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) on the VSCode extension marketplace.
