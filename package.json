@@ -1,6 +1,6 @@
 {
     "name": "learnpack-vscode",
-    "displayName": "learnpack-vscode",
+    "displayName": "LearnPack",
     "icon": "icon.png",
     "description": "Seamlessly build or take interactive & auto-graded tutorials, start learning now or build a tutorial.",
     "publisher": "learnpack",
@@ -14,12 +14,19 @@
     "author": {
         "name": "Alejandro Sanchez"
     },
+    "keywords": [
+		"learn",
+		"learn to code",
+		"tutorial",
+		"tutorials",
+		"education"
+	],
     "version": "0.0.3",
     "engines": {
         "vscode": "^1.55.0"
     },
     "categories": [
-        "Other"
+        "Education"
     ],
     "activationEvents": [
         "onStartupFinished"
