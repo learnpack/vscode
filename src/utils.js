@@ -65,4 +65,10 @@ const createResetFile = (path, slug, name) => {
   }
 };
 
-module.exports = { getWorkspacePath, execShellCommand, isPortFree, createResetFile };
+const createLearnFolder = () => {
+  if (!fs.existsSync(`${extension.workspaceRoot}/.learn`)) {
+      fs.mkdirSync(`${extension.workspaceRoot}/.learn`);
+  }
+}
+
+module.exports = { getWorkspacePath, execShellCommand, isPortFree, createResetFile, createLearnFolder };
