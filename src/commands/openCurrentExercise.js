@@ -14,7 +14,7 @@ module.exports = async () => {
 
 const openFiles = async (ex) => {
   const files = ex.visibleFiles;
-  
+
   logger.debug(`Files to open`, files);
   let editor = null;
   for (let i = 0; i < files.length; i++) {
@@ -24,14 +24,14 @@ const openFiles = async (ex) => {
       );
       const fileName = files[i].name;
       const path = files[i].path;
-      
+
       createResetFile(path, ex.title, fileName);
 
-      editor = await vscode.window.showTextDocument(
-        file,
-        vscode.ViewColumn.One,
-        false
-      );
+      editor = await vscode.window.showTextDocument(file, {
+        viewColumn: vscode.ViewColumn.One,
+        preserveFocus: false,
+        preview: false,
+      });
     } catch (err) {
       logger.error(err.message);
     }
