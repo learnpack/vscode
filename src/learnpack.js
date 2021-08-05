@@ -7,6 +7,7 @@ const logger = require("./utils/console")
 const queue = require("./utils/fileQueue");
 const { config } = require('shelljs');
 const eventEmitter = new em.EventEmitter();
+const { createLearnFolder } = require("./utils");
 
 let listener = null;
 let configFile = null;
@@ -64,8 +65,9 @@ const init = async () => {
                     agent: "vscode"
                 }
             },
-            currentExercise: null
+            currentExercise: null,
         }
+        createLearnFolder();
         fs.writeFileSync(`${extension.workspaceRoot}/.learn/config.json`, JSON.stringify(configFile, null, 2));
     }else{
         configFile = JSON.parse(fs.readFileSync(`${extension.workspaceRoot}/.learn/config.json`))
