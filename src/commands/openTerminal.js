@@ -7,18 +7,15 @@ const lp = require('../learnpack')
 let terminal = null
 const TERMINAL_NAME = `LearnPack Terminal`
 module.exports = () => {
-
     const extConfig = vscode.workspace.getConfiguration()
 	const learnpackCommand = extConfig.get('learnpack.terminalEntryCommand');
-    
     // make sure there is  only one learnpack terminal
-    if(!terminal && vscode.window.activeTerminal.name === TERMINAL_NAME){
+
+    if(!terminal && vscode.window.activeTerminal && vscode.window.activeTerminal.name === TERMINAL_NAME){
         terminal = vscode.window.activeTerminal
     }
 
     if(!terminal){
-
-
         logger.debug(`Opening new terminal`)
         terminal = vscode.window.createTerminal(TERMINAL_NAME);
         vscode.window.onDidCloseTerminal(t => {
