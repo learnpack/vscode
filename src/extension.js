@@ -14,7 +14,7 @@ function activate(context) {
 		vscode.window.showInformationMessage("LearnPack didn't start because no files were found on this workspace")
 		return;
 	} 
-	const workspacePath = getWorkspacePath().wf;
+	const workspacePath = getWorkspacePath().wf.replace(/\/(\w):/, "$1:");
 	logger.debug("Activating learnpack extension on "+workspacePath)
 
 	// TODO: load name and title from the package.json
