@@ -1,7 +1,7 @@
 const vscode = require("vscode");
 const lp = require("../learnpack");
 const logger = require("../utils/console");
-const { createResetFile } = require("../utils");
+const { createResetFile, prioritizeHTMLFile } = require("../utils");
 
 module.exports = async () => {
   logger.debug("open current");
@@ -13,7 +13,7 @@ module.exports = async () => {
 };
 
 const openFiles = async (ex) => {
-  const files = ex.visibleFiles;
+  const files = prioritizeHTMLFile(ex.visibleFiles);
 
   logger.debug(`Files to open`, files);
   let editor = null;
