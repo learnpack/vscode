@@ -95,7 +95,7 @@ module.exports = {
     config: () => configFile,
     on: (eventName, listener) => eventEmitter.on(eventName, listener),
     currentExercise: () => {
-        logger.debug("curent is ", configFile.currentExercise)
+        logger.debug("current is ", configFile.currentExercise)
         const current = configFile.exercises.find(e => e.slug == configFile.currentExercise)
         if(!current) return null;
         
