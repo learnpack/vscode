@@ -31,7 +31,6 @@ jobs:
       with:
         node-version: 16
       if: success() && startsWith( github.ref, 'refs/tags/releases/')
-    - run: npm install vsce
     - run: vsce publish
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
