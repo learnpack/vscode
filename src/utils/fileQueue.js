@@ -138,7 +138,7 @@ const onPull = (callback) => {
     logger.debug("Starting to listen...")
     try{
         loadFile(options.path)
-    }catch{
+    } catch (err) {
         logger.debug("No previeues queue file, waiting for it to be created...")
     }
 
