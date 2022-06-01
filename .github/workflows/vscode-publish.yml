@@ -31,6 +31,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Publish
+      uses: actions/checkout@v2
       with:
         node-version: 14.x
       if: success() && startsWith( github.ref, 'refs/tags/releases/') && matrix.os == 'ubuntu-latest'
