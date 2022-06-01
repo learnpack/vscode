@@ -10,8 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Install Node.js
+      uses: actions/setup-node@v3
       with:
         node-version: 16
     - run: npm ci
@@ -21,12 +23,15 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+    - name: Publish
+      uses: actions/checkout@v3
+    - name: Install Node.js
+      uses: actions/setup-node@v3
       with:
         node-version: 16
     - run: npm ci
     - run: vsce publish
+      if: success() && startsWith( github.ref, 'refs/tags/releases/')
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
   
