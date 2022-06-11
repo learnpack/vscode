@@ -29,7 +29,7 @@ module.exports = () => {
     } else logger.debug(`Terminal already opened in process ${terminal.processId}`)
     
     terminal.show(true); // true = don't take focus when opening
-    if(!lp.config().currentExercise){
+    if(!lp.config().currentExercise && lp.config().config.autoplay){
         logger.debug(`Running LearnPack from the terminal: ${learnpackCommand}`)
         terminal.sendText(learnpackCommand);
     }
