@@ -34,9 +34,6 @@ jobs:
         node-version: 16
       if: success() && startsWith( github.ref, 'refs/tags/releases/')
     - run: npm install
-    - run: npm run deploy
-      env:
-        VSCE_PAT: ${{ secrets.VSCE_PAT }}
     - name: Publish to Open VSX Registry
       uses: HaaLeo/publish-vscode-extension@v1
       id: publishToOpenVSX
