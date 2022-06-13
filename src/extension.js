@@ -9,11 +9,10 @@ const lp = require("./learnpack")
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-
 	if(!getWorkspacePath()){
 		vscode.window.showInformationMessage("LearnPack didn't start because no files were found on this workspace")
 		return;
-	} 
+	}
 	const workspacePath = getWorkspacePath().wf.replace(/\/(\w):/, "$1:");
 	logger.debug("Activating learnpack extension on "+workspacePath)
 
@@ -59,8 +58,10 @@ function activate(context) {
 		.then(async ({ config }) => {
 			const free = await isPortFree(config.port)
 			logger.debug(`Port ${config.port} is free=${free}`)
-			if(free) await vscode.commands.executeCommand(`${extension.name}.openTerminal`)
-			else await vscode.commands.executeCommand(`${extension.name}.openInstructions`)
+			if(lp.autoPlay()){
+				if(free) await vscode.commands.executeCommand(`${extension.name}.openTerminal`)
+				else await vscode.commands.executeCommand(`${extension.name}.openInstructions`)
+			}
 		})
 		.catch(error => {
 			vscode.window.showErrorMessage(error.message || error.msg || error)

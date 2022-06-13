@@ -11,11 +11,15 @@ const { createLearnFolder } = require("./utils");
 
 let listener = null;
 let configFile = null;
+let autoPlay = null;
 let instructionsPanel = null;
 
 const callbacks = {
     [queue.events.RUNNING]: () => {
         const content = fs.readFileSync(`${extension.workspaceRoot}/.learn/config.json`);
+        const learnContent = fs.readFileSync(`${extension.workspaceRoot}/learn.json`);
+        
+        autoPlay = JSON.parse(learnContent).autoPlay;
         configFile = JSON.parse(content);
         
         logger.debug(`Updating configuration`, configFile)
@@ -59,17 +63,23 @@ const init = async () => {
      * that way when the server starts it doesn't open a separate window
      * */ 
     if(!fs.existsSync(`${extension.workspaceRoot}/.learn/config.json`)){
+        const learnContent = fs.readFileSync(`${extension.workspaceRoot}/learn.json`);
+        autoPlay = JSON.parse(learnContent).autoPlay;
+
         configFile = {
             config: {
                 editor: {
                     agent: "vscode"
-                }
+                },
+                autoPlay: autoPlay
             },
             currentExercise: null,
         }
         createLearnFolder();
         fs.writeFileSync(`${extension.workspaceRoot}/.learn/config.json`, JSON.stringify(configFile, null, 2));
     }else{
+        const learnContent = fs.readFileSync(`${extension.workspaceRoot}/learn.json`);
+        autoPlay = JSON.parse(learnContent).autoPlay;
         configFile = JSON.parse(fs.readFileSync(`${extension.workspaceRoot}/.learn/config.json`))
         logger.debug("First time loading configuration file", configFile)
     }
@@ -93,6 +103,7 @@ module.exports = {
     init, 
     events: queue.events,
     config: () => configFile,
+    autoPlay: () => autoPlay,
     on: (eventName, listener) => eventEmitter.on(eventName, listener),
     currentExercise: () => {
         logger.debug("curent is ", configFile.currentExercise)
