@@ -37,8 +37,8 @@ jobs:
     - run: npm run deploy
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
-    - name: Publish to Open VSX Registry
-      uses: HaaLeo/publish-vscode-extension@v1
-      id: publishToOpenVSX
-      with:
-        pat: ${{ secrets.OPEN_VSX_TOKEN }}
+    - run: npm ci
+      - name: Publish to Open VSX Registry
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: ${{ secrets.OPEN_VSX_TOKEN }}
