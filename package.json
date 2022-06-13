@@ -69,7 +69,7 @@
         "lint": "eslint .",
         "pretest": "npm run lint",
         "test": "node ./test/runTest.js",
-        "deploy": "vsce publish && ovsx publish"
+        "deploy": "vsce publish"
     },
     "devDependencies": {
         "@types/glob": "^7.1.3",
