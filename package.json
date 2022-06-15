@@ -3,7 +3,7 @@
     "displayName": "LearnPack",
     "icon": "icon.png",
     "description": "Seamlessly build or take interactive & auto-graded tutorials, start learning now or build a tutorial.",
-    "publisher": "learnpack",
+    "publisher": "learn-pack",
     "repository": {
         "type": "git",
         "url": "https://github.com/learnpack/vscode.git"
