@@ -11,7 +11,7 @@ const { createLearnFolder } = require("./utils");
 
 let listener = null;
 let configFile = null;
-let autoPlay = null;
+let autoPlay = true;
 let instructionsPanel = null;
 
 const callbacks = {
@@ -19,7 +19,8 @@ const callbacks = {
         const content = fs.readFileSync(`${extension.workspaceRoot}/.learn/config.json`);
         const learnContent = fs.readFileSync(`${extension.workspaceRoot}/learn.json`);
         
-        autoPlay = JSON.parse(learnContent).autoPlay;
+        let autoValue = JSON.parse(learnContent).autoPlay;
+        if(autoValue !== undefined) autoPlay = autoValue;
         configFile = JSON.parse(content);
         
         logger.debug(`Updating configuration`, configFile)
@@ -64,7 +65,8 @@ const init = async () => {
      * */ 
     if(!fs.existsSync(`${extension.workspaceRoot}/.learn/config.json`)){
         const learnContent = fs.readFileSync(`${extension.workspaceRoot}/learn.json`);
-        autoPlay = JSON.parse(learnContent).autoPlay;
+        let autoValue = JSON.parse(learnContent).autoPlay;
+        if(autoValue !== undefined) autoPlay = autoValue;
 
         configFile = {
             config: {
@@ -79,7 +81,8 @@ const init = async () => {
         fs.writeFileSync(`${extension.workspaceRoot}/.learn/config.json`, JSON.stringify(configFile, null, 2));
     }else{
         const learnContent = fs.readFileSync(`${extension.workspaceRoot}/learn.json`);
-        autoPlay = JSON.parse(learnContent).autoPlay;
+        let autoValue = JSON.parse(learnContent).autoPlay;
+        if(autoValue !== undefined) autoPlay = autoValue;
         configFile = JSON.parse(fs.readFileSync(`${extension.workspaceRoot}/.learn/config.json`))
         logger.debug("First time loading configuration file", configFile)
     }
