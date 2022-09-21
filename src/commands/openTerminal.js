@@ -7,7 +7,7 @@ const lp = require('../learnpack')
 let terminal = null
 const TERMINAL_NAME = `LearnPack Terminal`
 module.exports = () => {
-    const extConfig = vscode.workspace.getConfiguration()
+    const extConfig = vscode.workspace.getConfiguration();
 	const learnpackCommand = extConfig.get('learnpack.terminalEntryCommand');
     // make sure there is  only one learnpack terminal
 
