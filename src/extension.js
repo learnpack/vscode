@@ -50,7 +50,10 @@ function activate(context) {
 	lp.on(lp.events.OPEN_WINDOW, async (data={}) => {
 		const url = (typeof(data) === "string") ? data : data.url
 		const schemaUrl = vscode.Uri.parse(url)
-		vscode.env.openExternal(schemaUrl).catch(error => vscode.window.showErrorMessage(`Error opening window with: ${url}`))
+		logger.debug("Opening window with: ", schemaUrl)
+		vscode.env.openExternal(schemaUrl)
+			// .then(data => vscode.window.showInformationMessage(`Learnpack: Opening following url on a new window: ${url}`))
+			.catch(error => vscode.window.showErrorMessage(`Error opening window with: ${url}`))
 	})
 
 	// load learnpack, required to start listening to the events above.

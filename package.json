@@ -21,7 +21,7 @@
         "tutorials",
         "education"
     ],
-    "version": "1.0.14",
+    "version": "1.0.15",
     "engines": {
         "vscode": "^1.55.0"
     },
