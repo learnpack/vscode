@@ -45,6 +45,11 @@ function activate(context) {
 		await vscode.commands.executeCommand(`${extension.name}.openInstructions`)
 		vscode.window.showInformationMessage(`LearnPack is now running`)
 	})
+	lp.on(lp.events.OPEN_FILES, async (data) => {
+		logger.debug("Trying to open files. Data received in the next line")
+		logger.debug(data)
+		
+	})
 
 	// whenever we want to open a new window
 	lp.on(lp.events.OPEN_WINDOW, async (data={}) => {
