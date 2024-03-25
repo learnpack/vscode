@@ -46,6 +46,22 @@ function activate(context) {
 		vscode.window.showInformationMessage(`LearnPack is now running`)
 	})
 
+	// when the user wants to see the solution
+lp.on(lp.events.OPEN_FILES, async (data) => {
+    logger.debug("Trying to open files received in the next line")
+    logger.debug(data);
+    
+    // Loop through the array of files and open each one
+    for (const fileName of data) {
+        const file = vscode.Uri.file(`${workspacePath}/${fileName}`);
+        const editor = await vscode.window.showTextDocument(file, {
+            viewColumn: vscode.ViewColumn.One,
+            preserveFocus: false,
+            preview: false,
+        });
+    }
+})
+
 	// whenever we want to open a new window
 	lp.on(lp.events.OPEN_WINDOW, async (data={}) => {
 		const url = (typeof(data) === "string") ? data : data.url
