@@ -44,26 +44,6 @@ const isPortFree = (port) =>
       });
   });
 
-const createResetFile = (path, slug, name) => {
-  logger.debug(`Creating reset ${slug}/${name} file`);
-
-  if (!fs.existsSync(`${extension.workspaceRoot}/.learn/resets`)) {
-    fs.mkdirSync(`${extension.workspaceRoot}/.learn/resets`);
-  }
-
-  if (!fs.existsSync(`${extension.workspaceRoot}/.learn/resets/` + slug)) {
-    fs.mkdirSync(`${extension.workspaceRoot}/.learn/resets/` + slug);
-    if (
-      !fs.existsSync(`${extension.workspaceRoot}/.learn/resets/${slug}/${name}`)
-    ) {
-      const content = fs.readFileSync(`${extension.workspaceRoot}/${path}`);
-      fs.writeFileSync(
-        `${extension.workspaceRoot}/.learn/resets/${slug}/${name}`,
-        content
-      );
-    }
-  }
-};
 
 const createLearnFolder = () => {
   if (!fs.existsSync(`${extension.workspaceRoot}/.learn`)) {
@@ -71,4 +51,4 @@ const createLearnFolder = () => {
   }
 }
 
-module.exports = { getWorkspacePath, execShellCommand, isPortFree, createResetFile, createLearnFolder };
+module.exports = { getWorkspacePath, execShellCommand, isPortFree, createLearnFolder };

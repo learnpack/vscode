@@ -1,7 +1,7 @@
 const vscode = require("vscode");
 const lp = require("../learnpack");
 const logger = require("../utils/console");
-const { createResetFile } = require("../utils");
+
 
 module.exports = async () => {
   logger.debug("open current");
@@ -24,8 +24,6 @@ const openFiles = async (ex) => {
       );
       const fileName = files[i].name;
       const path = files[i].path;
-
-      createResetFile(path, ex.title, fileName);
 
       editor = await vscode.window.showTextDocument(file, {
         viewColumn: vscode.ViewColumn.One,
