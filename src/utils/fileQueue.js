@@ -12,7 +12,8 @@ let events = {
     RESET_EXERCISE: "reset_exercise",
     OPEN_FILES: "open_files",
     OPEN_WINDOW: "open_window",
-    INSTRUCTIONS_CLOSED: "instructions_closed"
+    INSTRUCTIONS_CLOSED: "instructions_closed",
+    OPEN_TERMINAL: "open_terminal",
 }
 
 let options = {
