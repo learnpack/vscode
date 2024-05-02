@@ -101,14 +101,17 @@ const dequeue = () => {
         actions = incomingActions
         logger.debug(`No new actions to process: ${actions.length}/${incomingActions.length}`)
         return null
+    } else {
+        logger.debug(`There are new actions: ${actions.length}/${incomingActions.length}`)
+        
     }
 
     // do i need to reset actions to zero?
     if(actions.length > 0 && actions[0].time != incomingActions[0].time){
         actions = []
     } 
-
-    let action = incomingActions[actions.length]
+    
+    let action = incomingActions[incomingActions.length-1]
     logger.debug("Dequeing action ", action)
     actions.push(action)
     return action
