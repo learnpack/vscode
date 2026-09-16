@@ -20,11 +20,16 @@ let frameSrc = null
 let gated = false
 // set when the user opened the IDE in a tab and we wait for them to come back
 let awaitingReturn = false
+let openedAt = 0
+let returnTimer = null
 let lastLoadAt = 0
 
 // GitHub's private-port cookie lasts 3 hours; a panel shown again after that
 // gets the gate screen back instead of a broken iframe.
 const COOKIE_LIFETIME_MS = 3 * 60 * 60 * 1000
+// give the browser tab time to set the cookie before loading the iframe,
+// in case the user comes back right away
+const MIN_TAB_TIME_MS = 3000
 
 const reveal = () => {
     logger.debug(`Revealing instructions from column ${instructionsPanel.viewColumn} to 2`)
@@ -81,9 +86,14 @@ module.exports = async () => {
             case 'openExternal':
                 if (!externalUri) return
                 awaitingReturn = true
+                openedAt = Date.now()
                 vscode.env.openExternal(externalUri).then(opened => {
                     if (!opened) logger.warn("Could not open the IDE in the browser")
                 }, error => logger.warn(`Could not open the IDE in the browser: ${error.message}`))
+                break
+            // the webview's document became visible again after the tab switch
+            case 'returned':
+                loadAfterReturn()
                 break
             // "Show them here"
             case 'showFrame':
@@ -92,9 +102,10 @@ module.exports = async () => {
         }
     })
 
-    // the user came back from the tab: load the iframe without a second click
+    // backup signal: the webview holds the focus, so this rarely fires on the
+    // web client, but it does when the user clicks back into the workbench
     windowStateEvent = vscode.window.onDidChangeWindowState(e => {
-        if (e.focused && awaitingReturn && instructionsPanel) postLoad()
+        if (e.focused) loadAfterReturn()
     })
 
     instructionsEvent = instructionsPanel.onDidChangeViewState(e => {
@@ -129,6 +140,8 @@ module.exports = async () => {
         gated = false
         awaitingReturn = false
         lastLoadAt = 0
+        if (returnTimer) clearTimeout(returnTimer)
+        returnTimer = null
         if (instructionsEvent) instructionsEvent.dispose()
         if (messageEvent) messageEvent.dispose()
         if (windowStateEvent) windowStateEvent.dispose()
@@ -177,6 +190,20 @@ async function loadFrame() {
 function showGate() {
     awaitingReturn = false
     instructionsPanel.webview.postMessage({ command: 'showGate' })
+}
+
+// The user is back from the browser tab. Load the iframe once the tab has had
+// enough time to set GitHub's cookie; the gate disappears with the load, so
+// loading too early would leave a blank panel with no way back.
+function loadAfterReturn() {
+    if (!awaitingReturn || !instructionsPanel) return
+    awaitingReturn = false
+    const wait = Math.max(0, MIN_TAB_TIME_MS - (Date.now() - openedAt))
+    if (returnTimer) clearTimeout(returnTimer)
+    returnTimer = setTimeout(() => {
+        returnTimer = null
+        postLoad()
+    }, wait)
 }
 
 function postLoad() {
@@ -248,10 +275,27 @@ function getWebviewContent() {
             const gate = document.getElementById('gate');
             const iframe = document.querySelector('.iframe-content');
 
+            // armed after "Open in a new tab"; the next time this document becomes
+            // visible again (the user switched back to this browser tab) we tell
+            // the extension. Focus lives in this frame, so the workbench does not
+            // get its own focus event on the web client.
+            let awaitingReturn = false;
+            const notifyReturn = () => {
+                if (!awaitingReturn) return;
+                awaitingReturn = false;
+                vscode.postMessage({ command: 'returned' });
+            };
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') notifyReturn();
+            });
+            window.addEventListener('focus', notifyReturn);
+
             document.getElementById('open-external').addEventListener('click', () => {
+                awaitingReturn = true;
                 vscode.postMessage({ command: 'openExternal' });
             });
             document.getElementById('show-frame').addEventListener('click', () => {
+                awaitingReturn = false;
                 vscode.postMessage({ command: 'showFrame' });
             });
 
@@ -262,6 +306,7 @@ function getWebviewContent() {
 
                 switch (message.command) {
                     case 'showGate':
+                        awaitingReturn = false;
                         iframe.hidden = true;
                         gate.hidden = false;
                         break;
