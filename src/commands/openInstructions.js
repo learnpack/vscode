@@ -17,9 +17,6 @@ let externalUri = null
 let frameSrc = null
 // true on the Codespaces web client, where the iframe needs a gate screen
 let gated = false
-// set when the user opened the IDE in a tab; the webview then probes for
-// GitHub's cookie and tells us when the iframe can load
-let awaitingReturn = false
 let lastLoadAt = 0
 
 // GitHub's private-port cookie lasts 3 hours; a panel shown again after that
@@ -80,21 +77,16 @@ module.exports = async () => {
             case 'ready':
                 loadFrame()
                 break
-            // "Open in a new tab": GitHub sets its cookie there, then we load the iframe
+            // "Open the instructions in a new tab": GitHub sets its cookie there
             case 'openExternal':
                 if (!externalUri) return
-                awaitingReturn = true
                 vscode.env.openExternal(externalUri).then(opened => {
                     if (!opened) logger.warn("Could not open the IDE in the browser")
                 }, error => logger.warn(`Could not open the IDE in the browser: ${error.message}`))
                 break
-            // the webview's probe image loaded: GitHub's cookie is in place
+            // the webview's probe image loaded: GitHub lets requests through now
             case 'cookieReady':
-                if (awaitingReturn) postLoad()
-                break
-            // "Show them here"
-            case 'showFrame':
-                postLoad()
+                if (gated) postLoad()
                 break
         }
     })
@@ -129,7 +121,6 @@ module.exports = async () => {
         externalUri = null
         frameSrc = null
         gated = false
-        awaitingReturn = false
         lastLoadAt = 0
         if (instructionsEvent) instructionsEvent.dispose()
         if (messageEvent) messageEvent.dispose()
@@ -151,9 +142,10 @@ module.exports = async () => {
  *
  * On the Codespaces web client the forwarded port is private and GitHub only
  * serves it once an auth cookie exists, which its sign-in flow cannot set from
- * inside an iframe. So we show a gate screen: the user opens the IDE in a
- * browser tab (GitHub sets the cookie there) and the iframe loads when they
- * come back. Everywhere else the iframe just loads the url.
+ * inside an iframe. So the webview checks whether GitHub already lets requests
+ * through and, if not, shows a gate screen: the user opens the IDE in a
+ * browser tab (GitHub sets the cookie there) and the iframe loads as soon as
+ * the check succeeds. Everywhere else the iframe just loads the url.
  */
 async function loadFrame() {
     if (!instructionsPanel) return
@@ -174,15 +166,14 @@ async function loadFrame() {
     else postLoad()
 }
 
+// The webview probes first and only shows the gate if the cookie is missing.
 function showGate() {
-    awaitingReturn = false
     const base = externalUri.toString().replace(/\/$/, '')
     instructionsPanel.webview.postMessage({ command: 'showGate', probeUrl: `${base}${PROBE_PATH}` })
 }
 
 function postLoad() {
     if (!instructionsPanel || !frameSrc) return
-    awaitingReturn = false
     lastLoadAt = Date.now()
     instructionsPanel.webview.postMessage({ command: 'load', src: frameSrc })
 }
@@ -208,32 +199,41 @@ function getWebviewContent() {
                     font-size: var(--vscode-font-size);
                 }
                 .iframe-content { display: block; border: 0; margin: 0; width: 100%; height: 100vh; }
-                #gate { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; }
-                .gate-card { max-width: 360px; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
-                .gate-card h1 { margin: 0; font-size: 1.4em; font-weight: 600; line-height: 1.3; }
-                .gate-card p { margin: 0; line-height: 1.5; opacity: 0.9; }
-                .gate-card button {
+                .screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; }
+                .card { max-width: 360px; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+                .card p { margin: 0; line-height: 1.5; opacity: 0.9; }
+                .card button {
                     font: inherit; border: 0; border-radius: 2px; padding: 6px 14px; cursor: pointer;
+                    background: var(--vscode-button-background); color: var(--vscode-button-foreground);
                 }
-                .gate-card .primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
-                .gate-card .primary:hover { background: var(--vscode-button-hoverBackground); }
-                .gate-card .secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
-                .gate-card .secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
-                .gate-card button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
-                .gate-card .again { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; }
+                .card button:hover { background: var(--vscode-button-hoverBackground); }
+                .card button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
+                .row { flex-direction: row; align-items: center; gap: 12px; }
+                .spinner {
+                    flex: none; width: 18px; height: 18px; border-radius: 50%;
+                    border: 2px solid var(--vscode-progressBar-background, currentColor);
+                    border-right-color: transparent;
+                    animation: spin 0.9s linear infinite;
+                }
+                @keyframes spin { to { transform: rotate(360deg); } }
+                @media (prefers-reduced-motion: reduce) {
+                    .spinner { animation: none; border-right-color: inherit; opacity: 0.6; }
+                }
                 [hidden] { display: none !important; }
             </style>
 		</head>
 		<body>
-            <div id="gate" hidden>
-                <div class="gate-card">
-                    <h1>Open the instructions</h1>
-                    <button id="open-external" class="primary" type="button">Open in a new tab</button>
-                    <p>The instructions will open in a new browser tab.<br>When they finish loading, come back to this tab.</p>
-                    <div class="again">
-                        <span>Already opened them?</span>
-                        <button id="show-frame" class="secondary" type="button">Show them here</button>
-                    </div>
+            <div id="gate" class="screen" hidden>
+                <div class="card">
+                    <button id="open-external" type="button">Open the instructions in a new tab</button>
+                    <p>Come back here when the new tab finishes loading.</p>
+                </div>
+            </div>
+
+            <div id="waiting" class="screen" hidden>
+                <div class="card row" role="status">
+                    <span class="spinner" aria-hidden="true"></span>
+                    <span>Opening the instructions…</span>
                 </div>
             </div>
 
@@ -246,24 +246,45 @@ function getWebviewContent() {
             <script nonce="${cspNonce}">
 
             const vscode = acquireVsCodeApi();
-            const gate = document.getElementById('gate');
             const iframe = document.querySelector('.iframe-content');
+            const views = {
+                gate: document.getElementById('gate'),
+                waiting: document.getElementById('waiting'),
+                frame: iframe,
+            };
+            const openButton = document.getElementById('open-external');
 
-            // After "Open in a new tab" we cannot see GitHub's cookie, but we can
-            // tell when it works: an image request to the port is not a navigation,
-            // so GitHub lets it through once the cookie exists and redirects it to
-            // an html sign-in page (which fails as an image) until then. Probe once
-            // a second and load the iframe on the first success.
+            // one view at a time; null shows nothing (while the first probe runs)
+            let view = null;
+            const show = (name) => {
+                view = name;
+                for (const key in views) views[key].hidden = key !== name;
+            };
+
+            // We cannot see GitHub's cookie, but we can tell when it works: an image
+            // request to the port is not a navigation, so GitHub lets it through once
+            // the cookie exists and redirects it to an html sign-in page (which fails
+            // as an image) until then. Probe once a second and load the iframe on the
+            // first success. Probing starts as soon as the gate is requested, so a
+            // panel reopened with the cookie in place never shows the gate at all.
             const PROBE_INTERVAL_MS = 1000;
             const PROBE_WINDOW_MS = 2 * 60 * 1000;
+            // after this long on the spinner, offer the button again (the tab may
+            // have been blocked or closed before it loaded)
+            const WAITING_TIMEOUT_MS = 30 * 1000;
             let probeUrl = null;
             let probeTimer = null;
             let probeUntil = 0;
+            let waitingTimer = null;
 
             const stopProbing = () => {
                 if (probeTimer) clearTimeout(probeTimer);
                 probeTimer = null;
                 probeUntil = 0;
+            };
+            const stopWaiting = () => {
+                if (waitingTimer) clearTimeout(waitingTimer);
+                waitingTimer = null;
             };
             const probe = () => {
                 probeTimer = null;
@@ -271,32 +292,37 @@ function getWebviewContent() {
                 const img = new Image();
                 img.onload = () => {
                     stopProbing();
+                    stopWaiting();
                     vscode.postMessage({ command: 'cookieReady' });
                 };
                 img.onerror = () => {
+                    // the first failed probe is what reveals the gate
+                    if (view === null) show('gate');
                     if (probeUntil) probeTimer = setTimeout(probe, PROBE_INTERVAL_MS);
                 };
                 img.src = probeUrl + '?probe=' + Date.now();
             };
-            const startProbing = () => {
+            const startProbing = (immediately) => {
                 stopProbing();
                 probeUntil = Date.now() + PROBE_WINDOW_MS;
-                probeTimer = setTimeout(probe, PROBE_INTERVAL_MS);
+                probeTimer = setTimeout(probe, immediately ? 0 : PROBE_INTERVAL_MS);
             };
 
             // if the user took longer than the probe window in the tab, start
             // again when they come back to this browser tab
             document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible' && probeUrl && !probeTimer && !gate.hidden) startProbing();
+                if (document.visibilityState === 'visible' && probeUrl && !probeTimer && view !== 'frame') startProbing(true);
             });
 
-            document.getElementById('open-external').addEventListener('click', () => {
+            openButton.addEventListener('click', () => {
                 vscode.postMessage({ command: 'openExternal' });
-                startProbing();
-            });
-            document.getElementById('show-frame').addEventListener('click', () => {
-                stopProbing();
-                vscode.postMessage({ command: 'showFrame' });
+                show('waiting');
+                startProbing(false);
+                stopWaiting();
+                waitingTimer = setTimeout(() => {
+                    waitingTimer = null;
+                    if (view === 'waiting') show('gate');
+                }, WAITING_TIMEOUT_MS);
             });
 
             // Handle the message inside the webview
@@ -306,21 +332,21 @@ function getWebviewContent() {
 
                 switch (message.command) {
                     case 'showGate':
-                        stopProbing();
+                        stopWaiting();
                         probeUrl = message.probeUrl;
-                        iframe.hidden = true;
-                        gate.hidden = false;
+                        show(null);
+                        startProbing(true);
                         break;
                     case 'load':
                         stopProbing();
-                        gate.hidden = true;
-                        iframe.hidden = false;
+                        stopWaiting();
+                        show('frame');
                         iframe.src = message.src;
                         break;
                     case 'focusContent':
                         try {
-                            if (gate.hidden) iframe.focus()
-                            else document.getElementById('open-external').focus()
+                            if (view === 'frame') iframe.focus()
+                            else if (view === 'gate') openButton.focus()
                         } catch (error) {
                             console.error('Error focusing content:', error);
                         }
