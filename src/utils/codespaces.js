@@ -23,8 +23,13 @@ const readRotatedToken = () => {
         const content = fs.readFileSync(ENV_SECRETS_PATH, "utf8")
         const line = content.split(/\r?\n/).find(l => l.startsWith("GITHUB_TOKEN="))
         if (!line) return null
-        const value = Buffer.from(line.slice("GITHUB_TOKEN=".length).trim(), "base64").toString("utf8").trim()
-        return value || null
+        // the file has been seen with base64 values; accept plain text too
+        const raw = line.slice("GITHUB_TOKEN=".length).trim()
+        const decoded = Buffer.from(raw, "base64").toString("utf8").trim()
+        const looksLikeToken = v => /^gh[a-z]_[A-Za-z0-9_]+$/.test(v)
+        if (looksLikeToken(decoded)) return decoded
+        if (looksLikeToken(raw)) return raw
+        return null
     } catch (error) {
         return null
     }
