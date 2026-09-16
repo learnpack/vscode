@@ -8,7 +8,6 @@ const codespaces = require('../utils/codespaces')
 let instructionsPanel = null
 let instructionsEvent = null
 let messageEvent = null
-let windowStateEvent = null
 
 let forcedToActiveEditor = null
 let activeEditorEvent = null
@@ -18,18 +17,17 @@ let externalUri = null
 let frameSrc = null
 // true on the Codespaces web client, where the iframe needs a gate screen
 let gated = false
-// set when the user opened the IDE in a tab and we wait for them to come back
+// set when the user opened the IDE in a tab; the webview then probes for
+// GitHub's cookie and tells us when the iframe can load
 let awaitingReturn = false
-let openedAt = 0
-let returnTimer = null
 let lastLoadAt = 0
 
 // GitHub's private-port cookie lasts 3 hours; a panel shown again after that
 // gets the gate screen back instead of a broken iframe.
 const COOKIE_LIFETIME_MS = 3 * 60 * 60 * 1000
-// give the browser tab time to set the cookie before loading the iframe,
-// in case the user comes back right away
-const MIN_TAB_TIME_MS = 3000
+// an asset of the IDE the webview can load as an image to check whether
+// GitHub already lets requests through to the port
+const PROBE_PATH = '/learnpack.svg'
 
 const reveal = () => {
     logger.debug(`Revealing instructions from column ${instructionsPanel.viewColumn} to 2`)
@@ -86,26 +84,19 @@ module.exports = async () => {
             case 'openExternal':
                 if (!externalUri) return
                 awaitingReturn = true
-                openedAt = Date.now()
                 vscode.env.openExternal(externalUri).then(opened => {
                     if (!opened) logger.warn("Could not open the IDE in the browser")
                 }, error => logger.warn(`Could not open the IDE in the browser: ${error.message}`))
                 break
-            // the webview's document became visible again after the tab switch
-            case 'returned':
-                loadAfterReturn()
+            // the webview's probe image loaded: GitHub's cookie is in place
+            case 'cookieReady':
+                if (awaitingReturn) postLoad()
                 break
             // "Show them here"
             case 'showFrame':
                 postLoad()
                 break
         }
-    })
-
-    // backup signal: the webview holds the focus, so this rarely fires on the
-    // web client, but it does when the user clicks back into the workbench
-    windowStateEvent = vscode.window.onDidChangeWindowState(e => {
-        if (e.focused) loadAfterReturn()
     })
 
     instructionsEvent = instructionsPanel.onDidChangeViewState(e => {
@@ -140,15 +131,11 @@ module.exports = async () => {
         gated = false
         awaitingReturn = false
         lastLoadAt = 0
-        if (returnTimer) clearTimeout(returnTimer)
-        returnTimer = null
         if (instructionsEvent) instructionsEvent.dispose()
         if (messageEvent) messageEvent.dispose()
-        if (windowStateEvent) windowStateEvent.dispose()
         if (activeEditorEvent) activeEditorEvent.dispose()
         instructionsEvent = null
         messageEvent = null
-        windowStateEvent = null
         activeEditorEvent = null
     })
 
@@ -189,21 +176,8 @@ async function loadFrame() {
 
 function showGate() {
     awaitingReturn = false
-    instructionsPanel.webview.postMessage({ command: 'showGate' })
-}
-
-// The user is back from the browser tab. Load the iframe once the tab has had
-// enough time to set GitHub's cookie; the gate disappears with the load, so
-// loading too early would leave a blank panel with no way back.
-function loadAfterReturn() {
-    if (!awaitingReturn || !instructionsPanel) return
-    awaitingReturn = false
-    const wait = Math.max(0, MIN_TAB_TIME_MS - (Date.now() - openedAt))
-    if (returnTimer) clearTimeout(returnTimer)
-    returnTimer = setTimeout(() => {
-        returnTimer = null
-        postLoad()
-    }, wait)
+    const base = externalUri.toString().replace(/\/$/, '')
+    instructionsPanel.webview.postMessage({ command: 'showGate', probeUrl: `${base}${PROBE_PATH}` })
 }
 
 function postLoad() {
@@ -223,7 +197,7 @@ function getWebviewContent() {
 		<head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${cspNonce}'; frame-src https: http:;">
+            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${cspNonce}'; img-src https: http:; frame-src https: http:;">
             <style>
                 html, body { height: 100%; }
                 body {
@@ -275,27 +249,53 @@ function getWebviewContent() {
             const gate = document.getElementById('gate');
             const iframe = document.querySelector('.iframe-content');
 
-            // armed after "Open in a new tab"; the next time this document becomes
-            // visible again (the user switched back to this browser tab) we tell
-            // the extension. Focus lives in this frame, so the workbench does not
-            // get its own focus event on the web client.
-            let awaitingReturn = false;
-            const notifyReturn = () => {
-                if (!awaitingReturn) return;
-                awaitingReturn = false;
-                vscode.postMessage({ command: 'returned' });
+            // After "Open in a new tab" we cannot see GitHub's cookie, but we can
+            // tell when it works: an image request to the port is not a navigation,
+            // so GitHub lets it through once the cookie exists and redirects it to
+            // an html sign-in page (which fails as an image) until then. Probe once
+            // a second and load the iframe on the first success.
+            const PROBE_INTERVAL_MS = 1000;
+            const PROBE_WINDOW_MS = 2 * 60 * 1000;
+            let probeUrl = null;
+            let probeTimer = null;
+            let probeUntil = 0;
+
+            const stopProbing = () => {
+                if (probeTimer) clearTimeout(probeTimer);
+                probeTimer = null;
+                probeUntil = 0;
             };
+            const probe = () => {
+                probeTimer = null;
+                if (!probeUrl || Date.now() > probeUntil) return stopProbing();
+                const img = new Image();
+                img.onload = () => {
+                    stopProbing();
+                    vscode.postMessage({ command: 'cookieReady' });
+                };
+                img.onerror = () => {
+                    if (probeUntil) probeTimer = setTimeout(probe, PROBE_INTERVAL_MS);
+                };
+                img.src = probeUrl + '?probe=' + Date.now();
+            };
+            const startProbing = () => {
+                stopProbing();
+                probeUntil = Date.now() + PROBE_WINDOW_MS;
+                probeTimer = setTimeout(probe, PROBE_INTERVAL_MS);
+            };
+
+            // if the user took longer than the probe window in the tab, start
+            // again when they come back to this browser tab
             document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') notifyReturn();
+                if (document.visibilityState === 'visible' && probeUrl && !probeTimer && !gate.hidden) startProbing();
             });
-            window.addEventListener('focus', notifyReturn);
 
             document.getElementById('open-external').addEventListener('click', () => {
-                awaitingReturn = true;
                 vscode.postMessage({ command: 'openExternal' });
+                startProbing();
             });
             document.getElementById('show-frame').addEventListener('click', () => {
-                awaitingReturn = false;
+                stopProbing();
                 vscode.postMessage({ command: 'showFrame' });
             });
 
@@ -306,11 +306,13 @@ function getWebviewContent() {
 
                 switch (message.command) {
                     case 'showGate':
-                        awaitingReturn = false;
+                        stopProbing();
+                        probeUrl = message.probeUrl;
                         iframe.hidden = true;
                         gate.hidden = false;
                         break;
                     case 'load':
+                        stopProbing();
                         gate.hidden = true;
                         iframe.hidden = false;
                         iframe.src = message.src;
