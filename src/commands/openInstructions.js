@@ -226,7 +226,7 @@ function getWebviewContent() {
             <div id="gate" class="screen" hidden>
                 <div class="card">
                     <button id="open-external" type="button">Open the instructions in a new tab</button>
-                    <p>Come back here when the new tab finishes loading.</p>
+                    <p>Once the new tab finishes loading, come back here &mdash; you can close it.</p>
                 </div>
             </div>
 
