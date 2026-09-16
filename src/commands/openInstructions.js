@@ -76,8 +76,10 @@ module.exports = async () => {
 
     instructionsPanel.onDidDispose(() => {
         instructionsPanel = null
-        instructionsEvent.dispose()
-        activeEditorEvent.dispose()
+        if (instructionsEvent) instructionsEvent.dispose()
+        if (activeEditorEvent) activeEditorEvent.dispose()
+        instructionsEvent = null
+        activeEditorEvent = null
     })
 
     // make sure instructions are visible and on the side
